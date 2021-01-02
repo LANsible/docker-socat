@@ -18,13 +18,16 @@ RUN apk add --no-cache \
   openssl-dev \
   openssl-libs-static
 
-# NOTE: `NETDB_INTERNAL` is non-POSIX, and thus not defined by MUSL.
-# We define it this way manually.
 RUN wget -qO- http://www.dest-unreach.org/socat/download/socat-${VERSION}.tar.gz | \
     tar -zxC "/tmp" --strip-components=1
 
 WORKDIR /tmp
 
+# Source: https://git.alpinelinux.org/aports/tree/main/socat/
+RUN wget -qO- https://git.alpinelinux.org/aports/plain/main/socat/use-linux-headers.patch | patch
+
+# NOTE: `NETDB_INTERNAL` is non-POSIX, and thus not defined by MUSL.
+# We define it this way manually.
 # libwrap not available on alpine
 # readline not needed (and not working with the alpine provided packages)
 RUN CORES=$(grep -c '^processor' /proc/cpuinfo); \
