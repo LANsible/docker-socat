@@ -3,7 +3,7 @@ FROM multiarch/alpine:${ARCHITECTURE}-v3.12 as builder
 
 # Socat version see:
 # http://www.dest-unreach.org/socat/
-ENV VERSION=1.7.3.4
+ENV VERSION=1.7.4.1
 
 # Add unprivileged user
 RUN echo "socat:x:1000:1000:socat:/:" > /etc_passwd
