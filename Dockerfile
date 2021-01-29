@@ -1,5 +1,5 @@
 ARG ARCHITECTURE
-FROM multiarch/alpine:${ARCHITECTURE}-v3.12 as builder
+FROM multiarch/alpine:${ARCHITECTURE}-v3.13 as builder
 
 # Socat version see:
 # http://www.dest-unreach.org/socat/
@@ -16,7 +16,9 @@ RUN apk add --no-cache \
   build-base \
   linux-headers \
   openssl-dev \
-  openssl-libs-static
+  openssl-libs-static \
+  readline-dev \
+  readline-static
 
 RUN wget -qO- http://www.dest-unreach.org/socat/download/socat-${VERSION}.tar.gz | \
     tar -zxC "/tmp" --strip-components=1
@@ -24,17 +26,14 @@ RUN wget -qO- http://www.dest-unreach.org/socat/download/socat-${VERSION}.tar.gz
 WORKDIR /tmp
 
 # Source: https://git.alpinelinux.org/aports/tree/main/socat/
-RUN wget -qO- https://git.alpinelinux.org/aports/plain/main/socat/use-linux-headers.patch | patch
-
 # NOTE: `NETDB_INTERNAL` is non-POSIX, and thus not defined by MUSL.
 # We define it this way manually.
-# libwrap not available on alpine
-# readline not needed (and not working with the alpine provided packages)
+RUN wget -qO- https://git.alpinelinux.org/aports/plain/main/socat/use-linux-headers.patch | patch && \
+  wget -qO- https://git.alpinelinux.org/aports/plain/main/socat/netdb-internal.patch | patch
+
 RUN CORES=$(grep -c '^processor' /proc/cpuinfo); \
     export MAKEFLAGS="-j$((CORES+1)) -l${CORES}"; \
-    CFLAGS="-Wall -O3 -static" LDFLAGS="-static" CPPFLAGS="-DNETDB_INTERNAL=-1" ./configure \
-      --disable-libwrap \
-      --disable-readline && \
+    CFLAGS="-Wall -O3 -static" LDFLAGS="-static" ./configure && \
     make
 
 # 'Install' upx from image since upx isn't available for aarch64 from Alpine
